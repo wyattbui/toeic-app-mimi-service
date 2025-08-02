@@ -1,13 +1,12 @@
 import {
   Injectable,
   NotFoundException,
-  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateQuestionDto,
   SubmitTestDto,
-  CreateBookmarkDto,
+  UpdateQuestionDto,
 } from './dto';
 
 @Injectable()
@@ -32,7 +31,7 @@ export class QuestionService {
 
   // Get random questions for practice
   async getRandomQuestions(
-    count: number = 20,
+    count = 20,
     difficulty?: string,
   ) {
     const whereClause = difficulty
@@ -98,6 +97,76 @@ export class QuestionService {
         part: true,
       },
     });
+  }
+
+  // Update question
+  async updateQuestion(
+    questionId: number,
+    dto: UpdateQuestionDto,
+  ) {
+    const question =
+      await this.prisma.question.findUnique({
+        where: { id: questionId },
+      });
+
+    if (!question) {
+      throw new NotFoundException(
+        'Question not found',
+      );
+    }
+
+    // If options are provided, update them
+    if (dto.options) {
+      // Delete existing options
+      await this.prisma.option.deleteMany({
+        where: { questionId },
+      });
+
+      // Create new options
+      await this.prisma.option.createMany({
+        data: dto.options.map((option) => ({
+          ...option,
+          questionId,
+        })),
+      });
+    }
+
+    // Update question
+    const { options, ...questionData } = dto;
+    return this.prisma.question.update({
+      where: { id: questionId },
+      data: questionData,
+      include: {
+        options: true,
+        part: true,
+      },
+    });
+  }
+
+  // Delete question
+  async deleteQuestion(questionId: number) {
+    const question =
+      await this.prisma.question.findUnique({
+        where: { id: questionId },
+      });
+
+    if (!question) {
+      throw new NotFoundException(
+        'Question not found',
+      );
+    }
+
+    // Delete associated options first
+    await this.prisma.option.deleteMany({
+      where: { questionId },
+    });
+
+    // Delete question
+    await this.prisma.question.delete({
+      where: { id: questionId },
+    });
+
+    return { message: 'Question deleted successfully' };
   }
 
   // Submit test and calculate score
@@ -221,85 +290,6 @@ export class QuestionService {
         },
       },
       orderBy: { createdAt: 'desc' },
-    });
-  }
-
-  // Create bookmark
-  async createBookmark(
-    userId: number,
-    dto: CreateBookmarkDto,
-  ) {
-    const existingBookmark =
-      await this.prisma.bookmark.findFirst({
-        where: {
-          userId,
-          questionId: dto.questionId,
-        },
-      });
-
-    if (existingBookmark) {
-      throw new ForbiddenException(
-        'Question already bookmarked',
-      );
-    }
-
-    return this.prisma.bookmark.create({
-      data: {
-        userId,
-        questionId: dto.questionId,
-        note: dto.note,
-      },
-      include: {
-        question: {
-          include: {
-            options: true,
-            part: true,
-          },
-        },
-      },
-    });
-  }
-
-  // Get user bookmarks
-  async getUserBookmarks(userId: number) {
-    return this.prisma.bookmark.findMany({
-      where: { userId },
-      include: {
-        question: {
-          include: {
-            options: true,
-            part: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-
-  // Delete bookmark
-  async removeBookmark(
-    userId: number,
-    bookmarkId: number,
-  ) {
-    const bookmark =
-      await this.prisma.bookmark.findUnique({
-        where: { id: bookmarkId },
-      });
-
-    if (!bookmark) {
-      throw new NotFoundException(
-        'Bookmark not found',
-      );
-    }
-
-    if (bookmark.userId !== userId) {
-      throw new ForbiddenException(
-        'Access denied',
-      );
-    }
-
-    return this.prisma.bookmark.delete({
-      where: { id: bookmarkId },
     });
   }
 

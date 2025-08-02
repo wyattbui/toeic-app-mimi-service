@@ -17,7 +17,6 @@ export class PrismaService extends PrismaClient {
   async cleanDb() {
     await this.$transaction([
       this.userAnswer.deleteMany(),
-      this.bookmark.deleteMany(),
       this.option.deleteMany(),
       this.question.deleteMany(),
       this.testResult.deleteMany(),

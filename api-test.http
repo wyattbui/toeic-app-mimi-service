@@ -1,0 +1,252 @@
+### Test Signup API
+POST http://localhost:3333/auth/signup
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "123456",
+  "name": "testuser"
+}
+
+### Test Login API  
+POST http://localhost:3333/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com", 
+  "password": "123456"
+}
+
+### Get All Parts
+GET http://localhost:3333/questions/parts
+
+### Get Questions by Part  
+GET http://localhost:3333/questions/part/1?limit=5
+
+### Create Question
+POST http://localhost:3333/questions
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+
+{
+  "partId": 1,
+  "questionText": "What is the capital of France?",
+  "questionType": "single",
+  "difficulty": "easy",
+  "explanation": "Paris is the capital and largest city of France.",
+  "options": [
+    {
+      "optionLetter": "A",
+      "optionText": "London",
+      "isCorrect": false
+    },
+    {
+      "optionLetter": "B", 
+      "optionText": "Paris",
+      "isCorrect": true
+    },
+    {
+      "optionLetter": "C",
+      "optionText": "Berlin", 
+      "isCorrect": false
+    },
+    {
+      "optionLetter": "D",
+      "optionText": "Madrid",
+      "isCorrect": false
+    }
+  ]
+}
+
+### Update Question
+PATCH http://localhost:3333/questions/1
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+
+{
+  "questionText": "Updated: What is the capital of France?",
+  "difficulty": "medium"
+}
+
+### Delete Question
+DELETE http://localhost:3333/questions/1
+Authorization: Bearer YOUR_JWT_TOKEN
+
+### Upload Files (Image + Audio)
+POST http://localhost:3333/questions/upload
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="files"; filename="question-image.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/your/image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="files"; filename="question-audio.mp3"  
+Content-Type: audio/mpeg
+
+< ./path/to/your/audio.mp3
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+# ===== TEST SET MANAGEMENT =====
+
+### Generate Test Set (Random Questions by Part)
+POST http://localhost:3333/questions/test-sets/generate
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+
+{
+  "partId": 1,
+  "title": "Part 1 Practice Test - Photos",
+  "description": "Practice test for TOEIC Part 1 - Photographs",
+  "questionCount": 10,
+  "timeLimit": 15,
+  "difficulty": "medium"
+}
+
+### Get My Test Sets
+GET http://localhost:3333/questions/test-sets/my
+Authorization: Bearer YOUR_JWT_TOKEN
+
+### Get Abandoned Test Sets (created but not completed)
+GET http://localhost:3333/questions/test-sets/abandoned
+Authorization: Bearer YOUR_JWT_TOKEN
+
+### Get Specific Test Set with Questions
+GET http://localhost:3333/questions/test-sets/1
+Authorization: Bearer YOUR_JWT_TOKEN
+
+### Start Test Set (mark as in_progress)
+POST http://localhost:3333/questions/test-sets/1/start
+Authorization: Bearer YOUR_JWT_TOKEN
+
+### Submit Test Set with Answers
+POST http://localhost:3333/questions/test-sets/submit
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+
+{
+  "testSetId": 1,
+  "answers": [
+    {
+      "questionId": 1,
+      "selectedOption": "B",
+      "timeSpent": 30
+    },
+    {
+      "questionId": 2,
+      "selectedOption": "A", 
+      "timeSpent": 25
+    },
+    {
+      "questionId": 3,
+      "selectedOption": null,
+      "timeSpent": 10
+    }
+  ]
+}
+
+### Delete Test Set
+DELETE http://localhost:3333/questions/test-sets/1
+Authorization: Bearer YOUR_JWT_TOKEN
+
+# ===== TEST HISTORY & ANALYTICS =====
+
+### Get My Test History (User xem lịch sử làm bài của mình)
+# Returns: Array of completed test sets with basic info
+GET http://localhost:3333/questions/test-sets/history/my
+Authorization: Bearer YOUR_JWT_TOKEN
+
+### Get My Statistics (User xem thống kê của mình)  
+# Returns: completedTests, averageScore, bestScore, partStatistics
+GET http://localhost:3333/questions/test-sets/statistics/my
+Authorization: Bearer YOUR_JWT_TOKEN
+
+### Review My Test Set (User xem chi tiết bài đã làm)
+# Returns: Test set với đầy đủ câu hỏi, đáp án đúng và đáp án của user
+GET http://localhost:3333/questions/test-sets/1/review
+Authorization: Bearer YOUR_JWT_TOKEN
+
+# ===== ADMIN ENDPOINTS - THEO DÕI LỊCH SỬ USER =====
+
+### Admin: Get All Users Test History (Admin xem tất cả lịch sử)
+# Returns: Array of all completed test sets from all users
+GET http://localhost:3333/questions/admin/test-sets/all-history
+Authorization: Bearer ADMIN_JWT_TOKEN
+
+### Admin: Get Specific User Test History (Admin theo dõi user cụ thể)
+# Returns: { user, testHistory, statistics } - Lịch sử và thống kê của 1 user
+GET http://localhost:3333/questions/admin/users/2/test-history
+Authorization: Bearer ADMIN_JWT_TOKEN
+
+### Admin: Get Specific User Statistics (Admin xem thống kê user cụ thể)
+# Returns: Statistics for specific user across all parts
+GET http://localhost:3333/questions/admin/users/2/statistics
+Authorization: Bearer ADMIN_JWT_TOKEN
+
+### Admin: Review Any Test Set (Admin xem chi tiết bài làm của bất kỳ ai)
+# Returns: Full test set details with answers (không giới hạn user)
+GET http://localhost:3333/questions/admin/test-sets/1/review
+Authorization: Bearer ADMIN_JWT_TOKEN
+
+# ===== DEMO FLOW: TẠO VÀ LÀM BÀI TEST ĐỂ CÓ LỊCH SỬ =====
+
+### 1. Generate Test Set (Tạo bộ đề)
+POST http://localhost:3333/questions/test-sets/generate
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: application/json
+
+{
+  "partId": 1,
+  "title": "Listening Practice Test 1",
+  "description": "Practice test for Part 1",
+  "questionCount": 5,
+  "timeLimit": 300,
+  "difficulty": "easy"
+}
+
+### 2. Start Test (Bắt đầu làm bài)
+POST http://localhost:3333/questions/test-sets/1/start
+Authorization: Bearer YOUR_JWT_TOKEN
+
+### 3. Submit Test (Nộp bài)
+POST http://localhost:3333/questions/test-sets/submit
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: application/json
+
+{
+  "testSetId": 1,
+  "answers": [
+    {
+      "questionId": 1,
+      "selectedOption": "A",
+      "timeSpent": 30
+    },
+    {
+      "questionId": 2,
+      "selectedOption": "B", 
+      "timeSpent": 25
+    }
+  ]
+}
+
+### 4. Sau khi submit - Test lại các endpoint history và statistics để thấy dữ liệu
+
+# ===== CÁC TÍNH NĂNG CHÍNH =====
+#
+# USER APIs:
+# - Xem lịch sử làm bài của mình theo test set
+# - Xem thống kê cá nhân (số bài đã làm, điểm TB, điểm cao nhất, thống kê theo part)
+# - Review chi tiết bài đã làm (câu nào đúng/sai, đáp án đúng)
+#
+# ADMIN APIs:  
+# - Theo dõi lịch sử làm bài của tất cả users
+# - Theo dõi lịch sử và thống kê của user cụ thể
+# - Review chi tiết bài làm của bất kỳ user nào
+# - Thống kê tổng quan (TODO: có thể thêm endpoint này)
+#
+# DỮ LIỆU TRẢ VỀ:
+# - History: thông tin test sets đã hoàn thành, part, điểm số, thời gian
+# - Statistics: số bài đã làm, điểm trung bình, điểm cao nhất, thống kê theo part
+# - Review: chi tiết câu hỏi, đáp án của user, đáp án đúng, thời gian làm từng câu

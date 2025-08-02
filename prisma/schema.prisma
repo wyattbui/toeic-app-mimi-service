@@ -18,8 +18,7 @@ model User {
   email String @unique
   hash  String
 
-  firstName String?
-  lastName  String?
+  name String?
 
   // TOEIC related fields
   totalScore     Int? @default(0)
@@ -29,9 +28,80 @@ model User {
   targetScore    Int?
 
   testResults TestResult[]
-  bookmarks   Bookmark[]
-
+  testSets    TestSet[]
   @@map("users")
+}
+
+// Test Set Management - Bộ đề thi
+model TestSet {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  partId Int
+  part   Part @relation(fields: [partId], references: [id])
+
+  title       String
+  description String?
+  
+  // Test configuration
+  questionCount Int @default(20) // Số câu hỏi trong bộ đề
+  timeLimit     Int @default(60) // Thời gian làm bài (phút)
+  difficulty    String? // easy, medium, hard
+  
+  // Status tracking
+  status        String @default("created") // created, in_progress, completed, abandoned
+  startedAt     DateTime?
+  completedAt   DateTime?
+  
+  // Results
+  totalScore     Int? @default(0)
+  correctAnswers Int? @default(0)
+  wrongAnswers   Int? @default(0)
+  
+  // Questions in this test set
+  questions TestSetQuestion[]
+  answers   TestSetAnswer[]
+
+  @@map("test_sets")
+}
+
+// Questions included in a test set
+model TestSetQuestion {
+  id Int @id @default(autoincrement())
+  
+  testSetId  Int
+  testSet    TestSet @relation(fields: [testSetId], references: [id], onDelete: Cascade)
+  
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id])
+  
+  orderIndex Int // Thứ tự câu hỏi trong bộ đề
+
+  @@unique([testSetId, questionId])
+  @@map("test_set_questions")
+}
+
+// User answers for test set questions
+model TestSetAnswer {
+  id Int @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  
+  testSetId  Int
+  testSet    TestSet @relation(fields: [testSetId], references: [id], onDelete: Cascade)
+  
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id])
+  
+  selectedOption String? // A, B, C, D hoặc null nếu chưa trả lời
+  isCorrect      Boolean?
+  timeSpent      Int? // Thời gian làm câu này (giây)
+
+  @@unique([testSetId, questionId])
+  @@map("test_set_answers")
 }
 
 // TOEIC Test Structure
@@ -63,6 +133,7 @@ model Part {
   skillType   String // "Listening" or "Reading"
   
   questions Question[]
+  testSets  TestSet[]
 
   @@map("parts")
 }
@@ -89,9 +160,10 @@ model Question {
   passageText   String?  @db.Text
   passageTitle  String?
 
-  options     Option[]
-  userAnswers UserAnswer[]
-  bookmarks   Bookmark[]
+  options        Option[]
+  userAnswers    UserAnswer[]
+  testSetQuestions TestSetQuestion[]
+  testSetAnswers   TestSetAnswer[]
 
   @@map("questions")
 }
@@ -125,21 +197,4 @@ model UserAnswer {
   timeSpent      Int?    // in seconds
 
   @@map("user_answers")
-}
-
-// Bookmarks for saving questions
-model Bookmark {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  userId Int
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  questionId Int
-  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-
-  note String? // User's personal note
-
-  @@map("bookmarks")
 }
