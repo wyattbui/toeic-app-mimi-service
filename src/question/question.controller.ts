@@ -7,76 +7,102 @@ import {
   HttpStatus,
   Param,
   ParseIntPipe,
-  Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { GetUser } from '../auth/decorator';
 import { JwtGuard } from '../auth/guard';
-import { BookmarkService } from './questtion.service';
+import { QuestionService } from './question.service';
 import {
+  CreateQuestionDto,
+  SubmitTestDto,
   CreateBookmarkDto,
-  EditBookmarkDto,
 } from './dto';
 
-@UseGuards(JwtGuard)
-@Controller('bookmarks')
-export class BookmarkController {
-  constructor(
-    private bookmarkService: BookmarkService,
-  ) {}
+@Controller('questions')
+export class QuestionController {
+  constructor(private questionService: QuestionService) {}
 
-  @Get()
-  getBookmarks(@GetUser('id') userId: number) {
-    return this.bookmarkService.getBookmarks(
-      userId,
-    );
+  // Public endpoints (no auth required)
+  @Get('parts')
+  getAllParts() {
+    return this.questionService.getAllParts();
+  }
+
+  @Get('part/:partId')
+  getQuestionsByPart(
+    @Param('partId', ParseIntPipe) partId: number,
+    @Query('limit') limit?: string,
+  ) {
+    const limitNumber = limit ? parseInt(limit, 10) : undefined;
+    return this.questionService.getQuestionsByPart(partId, limitNumber);
+  }
+
+  @Get('random')
+  getRandomQuestions(
+    @Query('count') count?: string,
+    @Query('difficulty') difficulty?: string,
+  ) {
+    const countNumber = count ? parseInt(count, 10) : 20;
+    return this.questionService.getRandomQuestions(countNumber, difficulty);
   }
 
   @Get(':id')
-  getBookmarkById(
-    @GetUser('id') userId: number,
-    @Param('id', ParseIntPipe) bookmarkId: number,
-  ) {
-    return this.bookmarkService.getBookmarkById(
-      userId,
-      bookmarkId,
-    );
+  getQuestionById(@Param('id', ParseIntPipe) questionId: number) {
+    return this.questionService.getQuestionById(questionId);
   }
 
+  // Protected endpoints (auth required)
+  @UseGuards(JwtGuard)
   @Post()
+  createQuestion(
+    @GetUser('id') userId: number,
+    @Body() dto: CreateQuestionDto,
+  ) {
+    // Only admins should be able to create questions
+    // You might want to add role-based authorization here
+    return this.questionService.createQuestion(dto);
+  }
+
+  @UseGuards(JwtGuard)
+  @Post('submit-test')
+  submitTest(
+    @GetUser('id') userId: number,
+    @Body() dto: SubmitTestDto,
+  ) {
+    return this.questionService.submitTest(userId, dto);
+  }
+
+  @UseGuards(JwtGuard)
+  @Get('user/results')
+  getUserTestResults(@GetUser('id') userId: number) {
+    return this.questionService.getUserTestResults(userId);
+  }
+
+  // Bookmark endpoints
+  @UseGuards(JwtGuard)
+  @Get('user/bookmarks')
+  getUserBookmarks(@GetUser('id') userId: number) {
+    return this.questionService.getUserBookmarks(userId);
+  }
+
+  @UseGuards(JwtGuard)
+  @Post('bookmarks')
   createBookmark(
     @GetUser('id') userId: number,
     @Body() dto: CreateBookmarkDto,
   ) {
-    return this.bookmarkService.createBookmark(
-      userId,
-      dto,
-    );
+    return this.questionService.createBookmark(userId, dto);
   }
 
-  @Patch(':id')
-  editBookmarkById(
-    @GetUser('id') userId: number,
-    @Param('id', ParseIntPipe) bookmarkId: number,
-    @Body() dto: EditBookmarkDto,
-  ) {
-    return this.bookmarkService.editBookmarkById(
-      userId,
-      bookmarkId,
-      dto,
-    );
-  }
-
+  @UseGuards(JwtGuard)
+  @Delete('bookmarks/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Delete(':id')
-  deleteBookmarkById(
+  removeBookmark(
     @GetUser('id') userId: number,
     @Param('id', ParseIntPipe) bookmarkId: number,
   ) {
-    return this.bookmarkService.deleteBookmarkById(
-      userId,
-      bookmarkId,
-    );
+    return this.questionService.removeBookmark(userId, bookmarkId);
   }
 }

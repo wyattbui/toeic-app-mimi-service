@@ -5,6 +5,9 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
   "scripts": {
     "prisma:dev:deploy": "prisma migrate deploy",
     "db:dev:rm": "docker compose rm dev-db -s -f -v",
@@ -37,9 +40,11 @@
     "@nestjs/passport": "^8.1.0",
     "@nestjs/platform-express": "^8.0.0",
     "@prisma/client": "^3.8.1",
+    "@types/multer": "^2.0.0",
     "argon2": "^0.28.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.13.2",
+    "multer": "^2.0.2",
     "passport": "^0.5.2",
     "passport-jwt": "^4.0.0",
     "reflect-metadata": "^0.1.13",

@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -21,22 +21,125 @@ model User {
   firstName String?
   lastName  String?
 
-  bookmarks Bookmark[]
+  // TOEIC related fields
+  totalScore     Int? @default(0)
+  listeningScore Int? @default(0)
+  readingScore   Int? @default(0)
+  level          String? // Beginner, Intermediate, Advanced
+  targetScore    Int?
+
+  testResults TestResult[]
+  bookmarks   Bookmark[]
 
   @@map("users")
 }
 
+// TOEIC Test Structure
+model TestResult {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  totalScore     Int
+  listeningScore Int
+  readingScore   Int
+  duration       Int // in minutes
+  testType       String // Full, Part1-7, Practice
+  
+  answers UserAnswer[]
+
+  @@map("test_results")
+}
+
+// TOEIC Parts (1-7)
+model Part {
+  id          Int    @id @default(autoincrement())
+  partNumber  Int    @unique // 1-7
+  name        String // "Photographs", "Question-Response", etc.
+  description String?
+  skillType   String // "Listening" or "Reading"
+  
+  questions Question[]
+
+  @@map("parts")
+}
+
+// Questions for each part
+model Question {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  partId Int
+  part   Part @relation(fields: [partId], references: [id], onDelete: Cascade)
+
+  questionText  String   @db.Text
+  questionType  String   // "single", "multiple", "passage"
+  difficulty    String   // "easy", "medium", "hard"
+  explanation   String?  @db.Text
+  
+  // Media files
+  audioUrl      String?  // For listening parts
+  imageUrl      String?  // For part 1 (photographs)
+  
+  // For reading passages (Parts 6-7)
+  passageText   String?  @db.Text
+  passageTitle  String?
+
+  options     Option[]
+  userAnswers UserAnswer[]
+  bookmarks   Bookmark[]
+
+  @@map("questions")
+}
+
+// Answer options (A, B, C, D)
+model Option {
+  id         Int    @id @default(autoincrement())
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  optionLetter String // "A", "B", "C", "D"
+  optionText   String @db.Text
+  isCorrect    Boolean @default(false)
+
+  @@map("options")
+}
+
+// User's answers
+model UserAnswer {
+  id           Int      @id @default(autoincrement())
+  createdAt    DateTime @default(now())
+
+  testResultId Int?
+  testResult   TestResult? @relation(fields: [testResultId], references: [id], onDelete: Cascade)
+
+  questionId   Int
+  question     Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  selectedOption String  // "A", "B", "C", "D"
+  isCorrect      Boolean @default(false)
+  timeSpent      Int?    // in seconds
+
+  @@map("user_answers")
+}
+
+// Bookmarks for saving questions
 model Bookmark {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  title       String
-  description String?
-  link        String
-
   userId Int
-  user   User @relation(fields: [userId], references: [id])
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  note String? // User's personal note
 
   @@map("bookmarks")
 }
