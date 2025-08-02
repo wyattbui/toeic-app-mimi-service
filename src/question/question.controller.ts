@@ -22,7 +22,9 @@ import {
 
 @Controller('questions')
 export class QuestionController {
-  constructor(private questionService: QuestionService) {}
+  constructor(
+    private questionService: QuestionService,
+  ) {}
 
   // Public endpoints (no auth required)
   @Get('parts')
@@ -35,8 +37,13 @@ export class QuestionController {
     @Param('partId', ParseIntPipe) partId: number,
     @Query('limit') limit?: string,
   ) {
-    const limitNumber = limit ? parseInt(limit, 10) : undefined;
-    return this.questionService.getQuestionsByPart(partId, limitNumber);
+    const limitNumber = limit
+      ? parseInt(limit, 10)
+      : undefined;
+    return this.questionService.getQuestionsByPart(
+      partId,
+      limitNumber,
+    );
   }
 
   @Get('random')
@@ -44,13 +51,22 @@ export class QuestionController {
     @Query('count') count?: string,
     @Query('difficulty') difficulty?: string,
   ) {
-    const countNumber = count ? parseInt(count, 10) : 20;
-    return this.questionService.getRandomQuestions(countNumber, difficulty);
+    const countNumber = count
+      ? parseInt(count, 10)
+      : 20;
+    return this.questionService.getRandomQuestions(
+      countNumber,
+      difficulty,
+    );
   }
 
   @Get(':id')
-  getQuestionById(@Param('id', ParseIntPipe) questionId: number) {
-    return this.questionService.getQuestionById(questionId);
+  getQuestionById(
+    @Param('id', ParseIntPipe) questionId: number,
+  ) {
+    return this.questionService.getQuestionById(
+      questionId,
+    );
   }
 
   // Protected endpoints (auth required)
@@ -62,7 +78,9 @@ export class QuestionController {
   ) {
     // Only admins should be able to create questions
     // You might want to add role-based authorization here
-    return this.questionService.createQuestion(dto);
+    return this.questionService.createQuestion(
+      dto,
+    );
   }
 
   @UseGuards(JwtGuard)
@@ -71,20 +89,31 @@ export class QuestionController {
     @GetUser('id') userId: number,
     @Body() dto: SubmitTestDto,
   ) {
-    return this.questionService.submitTest(userId, dto);
+    return this.questionService.submitTest(
+      userId,
+      dto,
+    );
   }
 
   @UseGuards(JwtGuard)
   @Get('user/results')
-  getUserTestResults(@GetUser('id') userId: number) {
-    return this.questionService.getUserTestResults(userId);
+  getUserTestResults(
+    @GetUser('id') userId: number,
+  ) {
+    return this.questionService.getUserTestResults(
+      userId,
+    );
   }
 
   // Bookmark endpoints
   @UseGuards(JwtGuard)
   @Get('user/bookmarks')
-  getUserBookmarks(@GetUser('id') userId: number) {
-    return this.questionService.getUserBookmarks(userId);
+  getUserBookmarks(
+    @GetUser('id') userId: number,
+  ) {
+    return this.questionService.getUserBookmarks(
+      userId,
+    );
   }
 
   @UseGuards(JwtGuard)
@@ -93,7 +122,10 @@ export class QuestionController {
     @GetUser('id') userId: number,
     @Body() dto: CreateBookmarkDto,
   ) {
-    return this.questionService.createBookmark(userId, dto);
+    return this.questionService.createBookmark(
+      userId,
+      dto,
+    );
   }
 
   @UseGuards(JwtGuard)
@@ -103,6 +135,9 @@ export class QuestionController {
     @GetUser('id') userId: number,
     @Param('id', ParseIntPipe) bookmarkId: number,
   ) {
-    return this.questionService.removeBookmark(userId, bookmarkId);
+    return this.questionService.removeBookmark(
+      userId,
+      bookmarkId,
+    );
   }
 }
