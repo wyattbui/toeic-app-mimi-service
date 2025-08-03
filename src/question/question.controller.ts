@@ -345,4 +345,12 @@ export class QuestionController {
       testSetId,
     );
   }
+
+  // Test endpoint to set MinIO bucket policy
+  @Get('minio/test-policy')
+  async testMinioPolicySet() {
+    const fileUploadService = new FileUploadService();
+    await fileUploadService.setBucketPolicyManually();
+    return { message: 'Bucket policy set' };
+  }
 }

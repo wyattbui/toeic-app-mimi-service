@@ -53,7 +53,7 @@ export class FileUploadService {
       Statement: [
         {
           Effect: 'Allow',
-          Principal: { AWS: ['*'] },
+          Principal: '*',
           Action: ['s3:GetObject'],
           Resource: [
             `arn:aws:s3:::${this.bucketName}/*`,
@@ -76,6 +76,11 @@ export class FileUploadService {
         error,
       );
     }
+  }
+
+  // Manual method to set bucket policy (for testing)
+  async setBucketPolicyManually() {
+    await this.setBucketPolicy();
   }
 
   // Configure multer for file uploads (store in memory first)
