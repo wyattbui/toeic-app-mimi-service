@@ -26,8 +26,6 @@ export class CreateTestSetDto {
 
   @IsOptional()
   @IsInt()
-  @Min(10)
-  @Max(180)
   timeLimit?: number = 60; // minutes
 
   @IsOptional()

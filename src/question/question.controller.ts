@@ -139,35 +139,66 @@ export class QuestionController {
   @UseGuards(JwtGuard)
   @Post('upload')
   @UseInterceptors(
-    FilesInterceptor('files', 2, 
-      FileUploadService.getMulterConfig()
-    )
+    FilesInterceptor(
+      'files',
+      2,
+      FileUploadService.getMulterConfig(),
+    ),
   )
-  uploadFiles(
+  async uploadFiles(
     @UploadedFiles() files: Express.Multer.File[],
   ) {
-    const fileUploadService = new FileUploadService();
-    const urls = files.map(file => {
-      const type = file.mimetype.startsWith('image/') ? 'image' : 'audio';
-      return {
-        fieldname: file.fieldname,
-        filename: file.filename,
-        url: fileUploadService.generateFileUrl(file.filename, type),
-        type
-      };
-    });
-    
-    return { files: urls };
+    const fileUploadService =
+      new FileUploadService();
+
+    const uploadPromises = files.map(
+      async (file) => {
+        const fileName =
+          await fileUploadService.uploadFile(
+            file,
+          );
+        const type = file.mimetype.startsWith(
+          'image/',
+        )
+          ? 'image'
+          : 'audio';
+
+        return {
+          fieldname: file.fieldname,
+          filename: fileName,
+          url: fileUploadService.generateFileUrl(
+            fileName,
+          ),
+          type,
+        };
+      },
+    );
+
+    const uploadedFiles = await Promise.all(
+      uploadPromises,
+    );
+    return { files: uploadedFiles };
   }
 
   // ===== TEST SET MANAGEMENT =====
-  
-  @UseGuards(JwtGuard) 
+  @Get('test-sets/generate')
+  getGenerateTestSetget() {
+    return 'oK';
+  }
+
+  @UseGuards(JwtGuard)
   @Post('test-sets/generate')
   generateTestSet(
     @GetUser('id') userId: number,
     @Body() dto: CreateTestSetDto,
   ) {
+    console.log(
+      'Generating test set for user:',
+      userId,
+    );
+    // Validate dto here if needed
+    // You might want to add additional validation logic
+    // Proceed with generating the test set
     return this.testSetService.generateTestSet(
       userId,
       dto,
@@ -177,11 +208,13 @@ export class QuestionController {
   @UseGuards(JwtGuard)
   @Get('test-sets/my')
   getMyTestSets(@GetUser('id') userId: number) {
-    return this.testSetService.getUserTestSets(userId);
+    return this.testSetService.getUserTestSets(
+      userId,
+    );
   }
 
   @UseGuards(JwtGuard)
-  @Get('test-sets/abandoned')  
+  @Get('test-sets/abandoned')
   getAbandonedTestSets(
     @GetUser('id') userId: number,
   ) {
@@ -196,7 +229,9 @@ export class QuestionController {
     @GetUser('id') userId: number,
     @Param('id', ParseIntPipe) testSetId: number,
   ) {
-    return this.testSetService.getTestSetById(testSetId);
+    return this.testSetService.getTestSetById(
+      testSetId,
+    );
   }
 
   @UseGuards(JwtGuard)
@@ -236,17 +271,23 @@ export class QuestionController {
   }
 
   // ===== TEST HISTORY & ANALYTICS =====
-  
+
   @UseGuards(JwtGuard)
   @Get('test-sets/history/my')
-  getMyTestHistory(@GetUser('id') userId: number) {
-    return this.testSetService.getUserTestHistory(userId);
+  getMyTestHistory(
+    @GetUser('id') userId: number,
+  ) {
+    return this.testSetService.getUserTestHistory(
+      userId,
+    );
   }
 
   @UseGuards(JwtGuard)
   @Get('test-sets/statistics/my')
   getMyStatistics(@GetUser('id') userId: number) {
-    return this.testSetService.getUserStatistics(userId);
+    return this.testSetService.getUserStatistics(
+      userId,
+    );
   }
 
   @UseGuards(JwtGuard)
@@ -262,7 +303,7 @@ export class QuestionController {
   }
 
   // ===== ADMIN ENDPOINTS =====
-  
+
   @UseGuards(JwtGuard)
   @Get('admin/test-sets/all-history')
   getAllUsersTestHistory() {
@@ -273,7 +314,8 @@ export class QuestionController {
   @UseGuards(JwtGuard)
   @Get('admin/users/:userId/test-history')
   getSpecificUserTestHistory(
-    @Param('userId', ParseIntPipe) targetUserId: number,
+    @Param('userId', ParseIntPipe)
+    targetUserId: number,
   ) {
     // TODO: Add admin role check
     return this.testSetService.getSpecificUserTestHistory(
@@ -284,10 +326,13 @@ export class QuestionController {
   @UseGuards(JwtGuard)
   @Get('admin/users/:userId/statistics')
   getSpecificUserStatistics(
-    @Param('userId', ParseIntPipe) targetUserId: number,
+    @Param('userId', ParseIntPipe)
+    targetUserId: number,
   ) {
     // TODO: Add admin role check
-    return this.testSetService.getUserStatistics(targetUserId);
+    return this.testSetService.getUserStatistics(
+      targetUserId,
+    );
   }
 
   @UseGuards(JwtGuard)
@@ -296,6 +341,8 @@ export class QuestionController {
     @Param('id', ParseIntPipe) testSetId: number,
   ) {
     // TODO: Add admin role check
-    return this.testSetService.getTestSetWithAnswers(testSetId);
+    return this.testSetService.getTestSetWithAnswers(
+      testSetId,
+    );
   }
 }
